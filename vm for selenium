@@ -1,0 +1,219 @@
+1. Create a VM with linux ubuntu
+
+2. Install Docker
+sudo apt-get update
+sudo apt install docker.io 
+  or
+    sudo apt-get remove docker docker-engine docker.io
+    sudo apt install docker.io
+
+3. Start docker with system
+sudo systemctl start docker
+sudo systemctl enable docker
+
+4. Create Dirs
+sudo su
+mkdir downloads
+mkdir compose
+cd compose
+
+5. Install Dokcer Compose
+apt install docker-compose
+
+6. Create a file for Selenium Grid
+nano docker-compose.yml
+
+7. Choose a template:
+
+7.1 Default
+# To execute this docker-compose yml file use `docker-compose -f docker-compose.yml up`
+# Add the `-d` flag at the end for detached execution
+# To stop the execution, hit Ctrl+C, and then `docker-compose -f docker-compose.yml down`
+version: "3"
+services:
+  chrome:
+    image: selenium/node-chrome:4.6.0-20221104
+    shm_size: 2gb
+    depends_on:
+      - selenium-hub
+    environment:
+      - SE_EVENT_BUS_HOST=selenium-hub
+      - SE_EVENT_BUS_PUBLISH_PORT=4442
+      - SE_EVENT_BUS_SUBSCRIBE_PORT=4443
+    volumes:
+      - /home/ubuntu/downloads:/home/ubuntu/downloads
+
+  firefox:
+    image: selenium/node-firefox:4.6.0-20221104
+    shm_size: 2gb
+    depends_on:
+      - selenium-hub
+    environment:
+      - SE_EVENT_BUS_HOST=selenium-hub
+      - SE_EVENT_BUS_PUBLISH_PORT=4442
+      - SE_EVENT_BUS_SUBSCRIBE_PORT=4443
+    volumes:
+      - /home/ubuntu/downloads:/home/ubuntu/downloads
+
+  selenium-hub:
+    image: selenium/hub:4.6.0-20221104
+    container_name: selenium-hub
+    ports:
+      - "4442:4442"
+      - "4443:4443"
+      - "4444:4444"
+
+7.2 Full Grid
+# To execute this docker-compose yml file use `docker-compose -f docker-compose-v3-full-grid.yml up`
+# Add the `-d` flag at the end for detached execution
+# To stop the execution, hit Ctrl+C, and then `docker-compose -f docker-compose-v3-full-grid.yml down`
+version: "3"
+services:
+  selenium-event-bus:
+    image: selenium/event-bus:4.7.1-20221208
+    container_name: selenium-event-bus
+    ports:
+      - "4442:4442"
+      - "4443:4443"
+      - "5557:5557"
+
+  selenium-sessions:
+    image: selenium/sessions:4.7.1-20221208
+    container_name: selenium-sessions
+    ports:
+      - "5556:5556"
+    depends_on:
+      - selenium-event-bus
+    environment:
+      - SE_EVENT_BUS_HOST=selenium-event-bus
+      - SE_EVENT_BUS_PUBLISH_PORT=4442
+      - SE_EVENT_BUS_SUBSCRIBE_PORT=4443
+
+  selenium-session-queue:
+    image: selenium/session-queue:4.7.1-20221208
+    container_name: selenium-session-queue
+    ports:
+      - "5559:5559"
+
+  selenium-distributor:
+    image: selenium/distributor:4.7.1-20221208
+    container_name: selenium-distributor
+    ports:
+      - "5553:5553"
+    depends_on:
+      - selenium-event-bus
+      - selenium-sessions
+      - selenium-session-queue
+    environment:
+      - SE_EVENT_BUS_HOST=selenium-event-bus
+      - SE_EVENT_BUS_PUBLISH_PORT=4442
+      - SE_EVENT_BUS_SUBSCRIBE_PORT=4443
+      - SE_SESSIONS_MAP_HOST=selenium-sessions
+      - SE_SESSIONS_MAP_PORT=5556
+      - SE_SESSION_QUEUE_HOST=selenium-session-queue
+      - SE_SESSION_QUEUE_PORT=5559
+
+  selenium-router:
+    image: selenium/router:4.7.1-20221208
+    container_name: selenium-router
+    ports:
+      - "4444:4444"
+    depends_on:
+      - selenium-distributor
+      - selenium-sessions
+      - selenium-session-queue
+    environment:
+      - SE_DISTRIBUTOR_HOST=selenium-distributor
+      - SE_DISTRIBUTOR_PORT=5553
+      - SE_SESSIONS_MAP_HOST=selenium-sessions
+      - SE_SESSIONS_MAP_PORT=5556
+      - SE_SESSION_QUEUE_HOST=selenium-session-queue
+      - SE_SESSION_QUEUE_PORT=5559
+
+  chrome:
+    image: selenium/node-chrome:4.7.1-20221208
+    shm_size: 2gb
+    depends_on:
+      - selenium-event-bus
+    environment:
+      - SE_EVENT_BUS_HOST=selenium-event-bus
+      - SE_EVENT_BUS_PUBLISH_PORT=4442
+      - SE_EVENT_BUS_SUBSCRIBE_PORT=4443
+    volumes:
+      - /home/ubuntu/downloads:/home/ubuntu/downloads
+
+  edge:
+    image: selenium/node-edge:4.7.1-20221208
+    shm_size: 2gb
+    depends_on:
+      - selenium-event-bus
+    environment:
+      - SE_EVENT_BUS_HOST=selenium-event-bus
+      - SE_EVENT_BUS_PUBLISH_PORT=4442
+      - SE_EVENT_BUS_SUBSCRIBE_PORT=4443
+    volumes:
+      - /home/ubuntu/downloads:/home/ubuntu/downloads
+
+  firefox:
+    image: selenium/node-firefox:4.7.1-20221208
+    shm_size: 2gb
+    depends_on:
+      - selenium-event-bus
+    environment:
+      - SE_EVENT_BUS_HOST=selenium-event-bus
+      - SE_EVENT_BUS_PUBLISH_PORT=4442
+      - SE_EVENT_BUS_SUBSCRIBE_PORT=4443
+    volumes:
+      - /home/ubuntu/downloads:/home/ubuntu/downloads
+
+7.3 Grid for Arm64
+# To execute this docker-compose yml file use `docker-compose -f docker-compose.>
+# Add the `-d` flag at the end for detached execution
+# To stop the execution, hit Ctrl+C, and then `docker-compose -f docker-compose.>
+version: "3"
+services:
+  chrome:
+    image: seleniarm/node-chromium:latest
+    shm_size: 2gb
+    depends_on:
+      - seleniarm-hub
+    environment:
+      - SE_EVENT_BUS_HOST=seleniarm-hub
+      - SE_EVENT_BUS_PUBLISH_PORT=4442
+      - SE_EVENT_BUS_SUBSCRIBE_PORT=4443
+    volumes:
+      - /home/ubuntu/downloads:/home/ubuntu/downloads
+
+  firefox:
+    image: seleniarm/node-firefox:latest
+    shm_size: 2gb
+    depends_on:
+      - seleniarm-hub
+    environment:
+      - SE_EVENT_BUS_HOST=seleniarm-hub
+      - SE_EVENT_BUS_PUBLISH_PORT=4442
+      - SE_EVENT_BUS_SUBSCRIBE_PORT=4443
+    volumes:
+      - /home/ubuntu/downloads:/home/ubuntu/downloads
+
+  seleniarm-hub:
+    image: seleniarm/hub:latest
+    container_name: seleniarm-hub
+    # platform: linux/arm64/v8
+    ports:
+      - "4442:4442"
+      - "4443:4443"
+      - "4444:4444"
+
+8. Start the grid
+
+8.1:
+docker-compose -f docker-compose.yml up --scale chrome=5 --scale firefox=1
+
+8.2:
+docker-compose -f docker-compose.yml up --scale chrome=1 --scale firefox=12 -d
+
+GCloud:
+https://console.cloud.google.com/compute/instances
+Oracle:
+https://cloud.oracle.com/compute/instances
